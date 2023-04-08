@@ -16,7 +16,7 @@
 -record(state, {dummy}).
 -define(ETS_WOAP_ACCESS_TOKEN, woap_access_token).
 start() ->
-    wechat_auth_sup:start_child(?MODULE).
+    wechat_sup:start_child(?MODULE).
 
 stop() ->
     gen_server:call(?MODULE, stop).
