@@ -1,5 +1,5 @@
 {application, wechat,
- [{description, "An OTP application"},
+ [{description, "微信后端对接服务器"},
   {vsn, "0.1.0"},
   {registered, []},
   {mod, {wechat_app, []}},

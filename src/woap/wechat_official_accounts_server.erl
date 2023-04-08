@@ -5,6 +5,7 @@
 %%%=============================================================================
 -module(wechat_official_accounts_server).
 -author('J <j-som@foxmail.com>').
+-include("woap_cache.hrl").
 
 -behaviour(gen_server).
 
@@ -14,7 +15,6 @@
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -record(state, {dummy}).
--define(ETS_WOAP_ACCESS_TOKEN, woap_access_token).
 start() ->
     wechat_sup:start_child(?MODULE).
 
@@ -35,7 +35,6 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init(_Args) ->
-    ets:new(?ETS_WOAP_ACCESS_TOKEN, [set, named_table, protected, {keypos,1}]),
     {ok, #state{dummy=1}}.
 
 handle_call({get_token, AppId}, _From, State) ->
@@ -84,19 +83,9 @@ code_change(_OldVsn, State, _Extra) ->
 %% internal function 
 
 get_token_from_cache(AppId) ->
-    case ets:lookup(?ETS_WOAP_ACCESS_TOKEN, AppId) of 
-        [{AppId, AccessToken, ExpiresAt}] ->
-            case os:system_time(second) < ExpiresAt of 
-                true ->
-                    {ok, AccessToken};
-                false ->
-                    expired
-            end;
-        _ ->
-            undefined
-    end.
+    woap_cache:get(?CACHE_TYPE_ACCESS_TOKEN, AppId).
 
 set_token_to_cache(AppId, AccessToken, ExpiresAt) ->
-    ets:insert(?ETS_WOAP_ACCESS_TOKEN, {AppId, AccessToken, ExpiresAt}).
+    woap_cache:set(?CACHE_TYPE_ACCESS_TOKEN, AppId, AccessToken, ExpiresAt).
 
 
