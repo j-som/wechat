@@ -118,7 +118,7 @@ get_from_cache(TableKey) ->
 
 load_cache(mysql, TableKey) ->
     case mysql_poolboy:query(?POOL_NAME, "SELECT `value`, `expires_at` FROM `woap_cache` WHERE `key`= ?", [TableKey]) of
-        {ok, _Fields, [ValBin, ExpiresAt]} ->
+        {ok, _Fields, [[ValBin, ExpiresAt]]} ->
             Cache = #woap_cache{key= TableKey, value = ValBin, expires_at = ExpiresAt},
             ets:insert(woap_cache, Cache),
             case check_expired(ExpiresAt) of 
