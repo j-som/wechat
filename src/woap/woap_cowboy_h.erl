@@ -34,7 +34,8 @@ resource_exists(Req, State) ->
         undefined ->
             {false, Req, State};
         AppId ->
-            {ok, Token} = wechat_official_accounts_server:get_token(AppId),
+            %% {ok, Token} = wechat_official_accounts_server:get_token(AppId),
+            {token, Token} = wechat_official_accounts:get_val(AppId, token),
             {true, Req, [AppId, Token]}
     end.
 paste_text(Req, [_AppId, Token]) ->

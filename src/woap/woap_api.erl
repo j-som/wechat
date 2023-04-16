@@ -28,7 +28,7 @@
 .
 check_signture(Signature, Timestamp, Nonce, Token) ->
     TmpStr = list_to_binary(lists:sort([Token, Timestamp, Nonce])),
-    Signature1 = binary:encode_hex(crypto:hash(sha, TmpStr)),
+    Signature1 = string:lowercase(binary:encode_hex(crypto:hash(sha, TmpStr))),
     Signature =:= Signature1.
 
 %%------------------------------------------------------------------------------
