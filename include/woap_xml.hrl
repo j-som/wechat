@@ -92,7 +92,7 @@
 -record(woap_event_subscribe, {
     op :: 0|1,      % 0为取消 1为关注
     % 如果用户还未关注公众号，扫描带参数二维码事件, 则用户可以关注公众号，关注后微信会将带场景值关注事件推送给开发者。
-    info            % #woap_qr_scene{}
+    info            % #woap_event_qr_scene{}
 }).
 
 %% 带参数二维码 用户已关注时的事件推送 SCAN

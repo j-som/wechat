@@ -111,6 +111,15 @@ parse_data(<<"event">>, Children) ->
                 #woap_location_info{};
             <<"view_miniprogram">> ->
                 #woap_event_view_miniprogram{};
+            <<"subscribe">> ->
+                Info = parse_subcribe_info(Children),
+                #woap_event_subscribe{op = 1, info = Info};
+            <<"unsubscribe">> ->
+                #woap_event_subscribe{op = 0};
+            <<"SCAN">> ->
+                #woap_event_qr_scene{};
+            <<"LOCATION">> ->
+                #woap_event_location{};
             UnknownEvent ->
                 wechat_logger:warning("miss event ~s", [UnknownEvent]),
                 undefined
@@ -137,7 +146,7 @@ parse_data(MsgType, Children) ->
 
 
 
-parse_event([], Data, Children) ->
+parse_event(Data, [], Children) ->
     {Data, Children};
 parse_event(#woap_event_click{} = Data, [H|Children], Rest) ->
     case H of
@@ -218,6 +227,37 @@ parse_event(#woap_event_view_miniprogram{} = Data, [H|Children], Rest) ->
             parse_event(Data#woap_event_view_miniprogram{path = xml_value(Content)}, Children, Rest);
         #xmlElement{name = 'MenuId', content = Content} ->
             parse_event(Data#woap_event_view_miniprogram{menu_id = xml_value(Content)}, Children, Rest);
+        _ ->
+            parse_event(Data, Children, [H|Rest])
+    end;
+
+parse_event(#woap_event_subscribe{info = Info} = Data, Children, Rest) ->
+    {NInfo, NRest} = parse_event(Info, Children, Rest),
+    {Data#woap_event_subscribe{info = NInfo}, NRest};
+
+parse_event(#woap_event_qr_scene{} = Data, [H|Children], Rest) ->
+    case H of
+        #xmlElement{name = 'EventKey', content = Content} ->
+            case xml_value(Content) of
+                <<"qrscene_", Params/binary>> ->
+                    parse_event(Data#woap_event_qr_scene{params = Params}, Children, Rest);
+                Params ->
+                    parse_event(Data#woap_event_qr_scene{params = Params}, Children, Rest)
+            end;
+        #xmlElement{name = 'Ticket', content = Content} ->
+            parse_event(Data#woap_event_qr_scene{tiket = xml_value(Content)}, Children, Rest);
+        _ ->
+            parse_event(Data, Children, [H|Rest])
+    end;
+
+parse_event(#woap_event_location{} = Data, [H|Children], Rest) ->
+    case H of
+        #xmlElement{name = 'Latitude', content = Content} ->
+            parse_event(Data#woap_event_location{latitude = xml_value(Content)}, Children, Rest);
+        #xmlElement{name = 'Longitude', content = Content} ->
+            parse_event(Data#woap_event_location{longitude = xml_value(Content)}, Children, Rest);
+        #xmlElement{name = 'Precision', content = Content} ->
+            parse_event(Data#woap_event_location{precision = xml_value(Content)}, Children, Rest);
         _ ->
             parse_event(Data, Children, [H|Rest])
     end;
@@ -362,3 +402,16 @@ parse_msg_link([#xmlElement{name = 'Idx', content = Content}|T], Data, Rest) ->
 parse_msg_link([H|T], Data, Rest) ->
     parse_msg_link(T, Data, [H|Rest]);
 parse_msg_link([], Data, Rest) -> {Data, Rest}.
+
+parse_subcribe_info(Children) ->
+    case lists:keyfind('EventKey', #xmlElement.name, Children) of
+        #xmlElement{content = SubcribeContent} ->
+            case xml_value(SubcribeContent) of
+                <<"qrscene_", _/binary>> ->
+                    #woap_event_qr_scene{};
+                _ ->
+                    undefined
+            end;
+        _ ->
+            undefined
+    end.
